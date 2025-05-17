@@ -1,1 +1,7 @@
 .idea/
+tmp/
+out/
+build/
+тест.ц
+build.sh
+x.js
