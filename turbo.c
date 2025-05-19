@@ -1,5 +1,7 @@
 #include <arpa/inet.h>
+#include <idn2.h>
 #include <liburing.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdint.h>
@@ -50,6 +52,13 @@ typedef struct ю8 {
 } ю8;
 #define памʼять_т8 т8*
 #define памʼять_ю8 ю8*
+
+static char* перетворити_ю8_в_chars(ю8 value) {
+  char* copy = (char*)malloc(value.розмір + 1);
+  memcpy(copy, value.дані, value.розмір);
+  copy[value.розмір] = 0;
+  return copy;
+}
 
 typedef struct Виділяч Виділяч;
 
@@ -251,9 +260,48 @@ void слухати_інтернет_звʼязок_записано(
   турбіна->qcount++;
 }
 
+extern логічне __турбо__отримати_інтернет_адресу_з_ю8(Турбіна* турбіна,
+                                                      ю8 значення,
+                                                      позитивне* вихід) {
+  char* hostname_unicode = перетворити_ю8_в_chars(значення);
+
+  char* hostname = NULL;
+
+  int idn2res =
+      idn2_lookup_u8((const uint8_t*)hostname_unicode, (uint8_t**)&hostname, 0);
+  if (idn2res == IDN2_OK) {
+    free(hostname_unicode);
+  } else {
+    free(hostname_unicode);
+    return false;
+  }
+
+  struct addrinfo hints, *res;
+  struct in_addr addr;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+
+  int addres = getaddrinfo(hostname, NULL, &hints, &res);
+
+  idn2_free(hostname);
+
+  if (addres != 0) {
+    return false;
+  }
+
+  addr = ((struct sockaddr_in*)res->ai_addr)->sin_addr;
+
+  freeaddrinfo(res);
+
+  *вихід = ntohl(addr.s_addr);
+
+  return true;
+}
+
 extern логічне __турбо__підключити_інтернет_звʼязок(
     Турбіна* турбіна,
-    ю8 іа,
+    позитивне іа,
     позитивне порт,
     ТурбоОбробникПідключенняІнтернетЗвʼязку обробник_підключення,
     ТурбоОбробникДанихІнтернетЗвʼязку обробник_даних,
@@ -269,8 +317,9 @@ extern логічне __турбо__підключити_інтернет_звʼ
     return false;
   }
 
-  struct sockaddr_in addr = {.sin_family = AF_INET, .sin_port = htons(8080)};
-  inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+  struct sockaddr_in addr = {.sin_family = AF_INET,
+                             .sin_addr = {.s_addr = htonl(іа)},
+                             .sin_port = htons(порт)};
 
   int res = connect(sockfd, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1 && errno != EINPROGRESS) {
