@@ -251,7 +251,7 @@ void слухати_інтернет_звʼязок_записано(
   турбіна->qcount++;
 }
 
-extern void __турбо__підключити_інтернет_звʼязок(
+extern логічне __турбо__підключити_інтернет_звʼязок(
     Турбіна* турбіна,
     ю8 іа,
     позитивне порт,
@@ -262,18 +262,20 @@ extern void __турбо__підключити_інтернет_звʼязок(
     невідома_адреса аргумент) {
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
-    printf("Failed to create socket!\n");
-    return;
+    return false;
   }
-  make_nonblocking(sockfd);
+
+  if (make_nonblocking(sockfd) == -1) {
+    return false;
+  }
 
   struct sockaddr_in addr = {.sin_family = AF_INET, .sin_port = htons(8080)};
   inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
   int res = connect(sockfd, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1 && errno != EINPROGRESS) {
-    printf("Failed to connect!\n");
-    return;
+    close(sockfd);
+    return false;
   }
 
   ІнтернетЗвʼязок* інтернет_звʼязок =
@@ -292,6 +294,8 @@ extern void __турбо__підключити_інтернет_звʼязок(
   інтернет_звʼязок->закрито = false;
 
   слухати_інтернет_звʼязок_підключено(турбіна, інтернет_звʼязок);
+
+  return true;
 }
 
 void обробити_інтернет_звʼязок_закрито(Турбіна* турбіна,
