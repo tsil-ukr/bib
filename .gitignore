@@ -1,8 +1,5 @@
 .idea/
-tmp/
 out/
+tmp/
 build/
-тест.ц
-тест_обслуговувач.ц
-build.sh
 x.js
