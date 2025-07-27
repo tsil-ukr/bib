@@ -8,7 +8,7 @@ mkdir -p tmp
 
 clang -c -o tmp/bib.o bib.c
 clang -c -o tmp/turbo.o turbo.c
-ціль tmp/КД.ll скомпілювати КД/КД.ц
+ціль tmp/КД.ll скомпілювати КД.ц
 
 ціль tmp/прочитати_ввід.ll скомпілювати $SCRIPT_DIR/прочитати_ввід.ц
 clang -o tmp/прочитати_ввід tmp/прочитати_ввід.ll tmp/bib.o tmp/turbo.o tmp/КД.ll -luring -lidn2 -lpthread -lreadline
